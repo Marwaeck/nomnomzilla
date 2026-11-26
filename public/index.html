@@ -12,6 +12,7 @@
 <script defer src="vendor/html2canvas.min.js"></script>
 <script defer src="vendor/jspdf.umd.min.js"></script>
 <script src="local.js"></script>
+<script src="cardparse.js"></script>
 <style id="cardcss">
 /* Rezeptkarte – DIN A4 (794×1123 px), Stil der Bacon-One-Pot-Pasta-Karte */
 .rc{--s:1;width:794px;min-height:1123px;background:#FFFDF8;color:#2A2320;font-family:Inter,system-ui,sans-serif;position:relative;box-sizing:border-box;overflow:hidden}
@@ -189,11 +190,14 @@ form.ed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px
 <div class="ov" id="ovWiz" hidden><div class="sheet narrow wz" role="dialog" aria-modal="true" aria-labelledby="wTitle"><button class="x" type="button" data-close aria-label="Schließen">×</button><div id="wiz"></div></div></div>
 <div class="ov" id="ovImp" hidden><div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="iTitle"><button class="x" type="button" data-close aria-label="Schließen">×</button>
   <h2 id="iTitle" style="font-size:30px;margin:0 0 8px">Rezepte importieren</h2>
-  <p style="margin:0 0 14px">Claude sortiert jedes Rezept in Zutaten, Schritte und Merkmale. Ein einzelnes Rezept kannst du vor dem Speichern prüfen, mehrere landen direkt im Buch.</p>
-  <label class="drop" id="drop" for="impFile"><b>PDFs auswählen oder hierher ziehen</b><span>Rezeptkarten, Kochbuchseiten, gescannte Rezepte – auch mehrere Dateien und mehrseitige PDFs</span><input id="impFile" type="file" accept="application/pdf,.pdf" multiple></label>
+  <p style="margin:0 0 14px" id="impIntro">Rezeptkarten-PDFs im NomNomZilla-Layout werden direkt übernommen, ganz ohne Internet. Ein einzelnes Rezept kannst du vor dem Speichern prüfen, mehrere landen direkt im Buch.</p>
+  <label class="drop" id="drop" for="impFile"><b>PDFs auswählen oder hierher ziehen</b><span id="impHint">Eigene Rezeptkarten aus dem Export oder nach demselben Muster – auch mehrere Dateien und mehrseitige PDFs</span><input id="impFile" type="file" accept="application/pdf,.pdf" multiple></label>
+  <div id="impAi" hidden>
   <p style="margin:18px 0 8px;font-weight:600">… oder Text einfügen</p>
   <div class="f w"><textarea id="impText" style="min-height:180px" aria-label="Rezepttext" placeholder="Rezept aus einer Website, Nachricht oder Notiz hier hineinkopieren"></textarea></div>
-  <div class="acts"><div class="row"><button class="b" type="button" id="impGo">Text erkennen</button></div><p class="note" id="impNote" aria-live="polite"></p><ul class="implog" id="impLog"></ul></div>
+  <div class="acts"><div class="row"><button class="b" type="button" id="impGo">Text erkennen</button></div></div>
+  </div>
+  <div class="acts"><p class="note" id="impNote" aria-live="polite"></p><ul class="implog" id="impLog"></ul></div>
 </div></div>
 <div id="render" aria-hidden="true"></div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -260,6 +264,8 @@ async function exportPdf(list,name){
   if(!window.html2canvas||!window.jspdf){toast('Export-Bibliotheken laden noch, bitte gleich nochmal.');return}
   toast(list.length>1?`Erzeuge ${list.length} Karten …`:'Erzeuge Rezeptkarte …');
   const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+  // Rezeptdaten unsichtbar mitspeichern, damit die PDF später ohne Claude wieder eingelesen werden kann
+  try{pdf.setProperties({title:list.length===1?list[0].title:`Rezeptkarten (${list.length})`,subject:'NomNomZilla-Rezeptkarte',creator:'NomNomZilla',keywords:window.NNZCard.pack(list)})}catch(e){}
   for(let i=0;i<list.length;i++){
     if(i)pdf.addPage();
     const cv=await canvasFor(list[i]);const ratio=cv.height/cv.width;
@@ -315,7 +321,7 @@ function render(){
   if(!loaded){return}
   const f=filtered();
   $('#count').textContent=`${f.length} von ${recipes.length} Rezepten`;
-  if(!recipes.length){list.innerHTML=`<p class="empty">Noch keine Rezepte im Buch. Leg mit „Neues Rezept“ das erste an${sample?' oder importiere PDFs und Texte mit „Importieren“':''}.</p>`;return}
+  if(!recipes.length){list.innerHTML=`<p class="empty">Noch keine Rezepte im Buch. Leg mit „Neues Rezept“ das erste an oder lade Rezeptkarten-PDFs mit „Importieren“ hoch.</p>`;return}
   if(!f.length){list.innerHTML=`<p class="empty">Nichts gefunden für „${esc(st.q)}“. Versuch eine Zutat oder entferne einen Filter.</p>`;return}
   if(st.group==='none'){list.innerHTML=`<section class="group"><h2>Alle Rezepte</h2><div class="grid">${f.map(tile).join('')}</div></section>`;return}
   const groups=new Map();
@@ -472,7 +478,7 @@ const PROMPT_HEAD=`Erkenne alle Rezepte im folgenden Material und antworte nur m
 `;
 const S=(v,n=300)=>String(v??'').slice(0,n);
 function normRecipe(o){return{title:S(o.title,120)||'Ohne Titel',subtitle:S(o.subtitle),category:S(o.category,40),cuisine:S(o.cuisine,40),diet:DIETS.includes(o.diet)?o.diet:'',mainIngredient:S(o.mainIngredient,40),minutes:+o.minutes>0?Math.round(+o.minutes):null,difficulty:DIFFS.includes(o.difficulty)?o.difficulty:'',season:Array.isArray(o.season)?o.season.filter(s=>SEASONS.includes(s)):[],servings:S(o.servings,60),cookware:S(o.cookware,60),tags:Array.isArray(o.tags)?o.tags.map(t=>S(t,30)).filter(Boolean).slice(0,6):[],
-  ingredients:Array.isArray(o.ingredients)?o.ingredients.slice(0,60).map(i=>({a:S(i?.a,40),n:S(i?.n,120)})).filter(i=>i.n):[],steps:Array.isArray(o.steps)?o.steps.slice(0,30).map(s=>({t:S(s?.t,50),x:S(s?.x,1500)})).filter(s=>s.x):[],tip:S(o.tip,500),color:COLORS[o.color]?o.color:'lachs',icon:ICONS[o.icon]?o.icon:'topf'}}
+  ingredients:Array.isArray(o.ingredients)?o.ingredients.slice(0,60).map(i=>({a:S(i?.a,40),n:S(i?.n,120)})).filter(i=>i.n):[],steps:Array.isArray(o.steps)?o.steps.slice(0,30).map(s=>({t:S(s?.t,50),x:S(s?.x,1500)})).filter(s=>s.x):[],tip:S(o.tip,1500),color:COLORS[o.color]?o.color:'lachs',icon:ICONS[o.icon]?o.icon:'topf'}}
 async function askRecipes(material,images){
   const opts={modelTier:'default'};if(images?.length)opts.images=images;
   const o=await sample.json(PROMPT_HEAD+(images?.length?'\nDie Rezepte stehen auf den beigefügten Seitenbildern.':'')+(material?'\nMaterial:\n'+material.slice(0,15000):''),opts);
@@ -481,7 +487,7 @@ async function askRecipes(material,images){
 }
 const fatal=c=>['not_granted','sampling_disabled','capability_disabled','capability_removed','not_declared'].includes(c);
 function impFail(e){
-  if(fatal(e?.code)){$('#impBtn').hidden=true;close('#ovImp');toast('Import ist hier nicht verfügbar.');return true}
+  if(fatal(e?.code)){sample=null;impMode();$('#impNote').textContent='Der Claude-Import ist gerade nicht verfügbar. Eigene Rezeptkarten funktionieren weiter.';return true}
   $('#impNote').textContent=e?.code==='rate_limited'?'Gerade zu viele Anfragen, bitte später nochmal.':e?.code==='image_rejected'?'Eine Seite ließ sich nicht als Bild senden.':'Das hat nicht geklappt. Versuch es nochmal.';return false
 }
 let busy=false;
@@ -503,24 +509,50 @@ async function pageImage(page){
   const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
   await page.render({canvasContext:ctx,viewport:vp}).promise;return new Promise(r=>c.toBlob(r,'image/jpeg',.88));
 }
-async function readPdf(file,log){
-  const lib=await pdfjs();const doc=await lib.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;
-  const n=Math.min(doc.numPages,30);const pages=[];
-  for(let i=1;i<=n;i++){const p=await doc.getPage(i);const tc=await p.getTextContent();
-    let t='';for(const it of tc.items){t+=it.str;if(it.hasEOL)t+='\n'}
-    pages.push({p,text:t.trim()})}
-  log(`${file.name}: ${n} Seite${n>1?'n':''}${doc.numPages>30?' (nur die ersten 30)':''}`);
+/* Seiten ohne eigenes Kartenlayout an Claude geben (nur mit API-Schlüssel) */
+async function askPages(pages,log){
   const found=[];const lim=await sample.limits().catch(()=>null);const canImg=!!lim?.images;
   const textual=pages.filter(x=>x.text.replace(/\s/g,'').length>=120);
   if(textual.length===pages.length){
     // Textseiten bündeln (max. ~14.000 Zeichen pro Anfrage)
-    let chunk='',from=1;const flush=async to=>{if(!chunk)return;log(`liest Seite ${from}${to>from?'–'+to:''} …`);found.push(...await askRecipes(chunk));chunk=''};
-    for(let i=0;i<pages.length;i++){const add=`\n--- Seite ${i+1} ---\n${pages[i].text}`;if(chunk.length+add.length>14000){await flush(i);from=i+1}chunk+=add}
-    await flush(pages.length);
+    let chunk='',from=pages[0].n,to=from;const flush=async()=>{if(!chunk)return;log(`Claude liest Seite ${from}${to>from?'–'+to:''} …`);found.push(...await askRecipes(chunk));chunk=''};
+    for(const pg of pages){const add=`\n--- Seite ${pg.n} ---\n${pg.text}`;if(chunk&&chunk.length+add.length>14000){await flush();from=pg.n}chunk+=add;to=pg.n}
+    await flush();
   }else{
     if(!canImg)throw{code:'no_images'};
-    for(let i=0;i<pages.length;i++){log(`liest Seite ${i+1} als Bild …`);const img=await pageImage(pages[i].p);found.push(...await askRecipes(pages[i].text,[img]))}
+    for(const pg of pages.slice(0,30)){log(`Claude liest Seite ${pg.n} als Bild …`);const img=await pageImage(pg.p);found.push(...await askRecipes(pg.text,[img]))}
   }
+  return found;
+}
+/* Farbe der Kopfzeile aus der gerenderten Seite ablesen */
+async function headColor(page){
+  try{const vp=page.getViewport({scale:.25});const c=document.createElement('canvas');c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);await page.render({canvasContext:ctx,viewport:vp}).promise;
+    const d=ctx.getImageData(Math.round(c.width*.03),Math.round(c.height*.012),1,1).data;
+    return window.NNZCard.nearestColor([d[0],d[1],d[2]],COLORS)}catch(e){return null}
+}
+async function readPdf(file,log){
+  const lib=await pdfjs();const doc=await lib.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;
+  // 1. Eigener Export: Rezeptdaten stecken in den Metadaten
+  const md=await doc.getMetadata().catch(()=>null);
+  const emb=window.NNZCard.unpack(md?.info?.Keywords);
+  if(emb?.length){log(`${file.name}: ${emb.length} Rezept${emb.length>1?'e':''} aus einem NomNomZilla-Export`);return emb.map(normRecipe)}
+  // 2. Kartenlayout Seite für Seite lesen
+  const n=Math.min(doc.numPages,200);const found=[],rest=[];
+  for(let i=1;i<=n;i++){
+    const p=await doc.getPage(i);const pi=await window.NNZCard.pageItems(p);
+    const r=window.NNZCard.parseCard(pi,{cats:CATS,diets:DIETS,diffs:DIFFS,tags:[...new Set(recipes.flatMap(x=>x.tags||[]))]});
+    if(r){const g=window.NNZCard.guess(r);if(r.diet)delete g.diet;found.push(normRecipe({...g,...r,color:await headColor(p)||'lachs'}));continue}
+    rest.push({p,n:i,text:pi.items.length?(await p.getTextContent()).items.map(it=>it.str+(it.hasEOL?'\n':'')).join('').trim():''});
+  }
+  if(found.length)log(`${file.name}: ${found.length} Rezeptkarte${found.length>1?'n':''} erkannt`);
+  if(!rest.length)return found;
+  // 3. Rest: mit Claude, falls scharfgeschaltet
+  const which=rest.length===n?'':` (Seite ${rest.map(x=>x.n).join(', ')})`;
+  if(sample){const more=await askPages(rest.slice(0,30),log);return found.concat(more)}
+  const noText=rest.every(x=>x.text.replace(/\s/g,'').length<20);
+  log(noText?`${file.name}${which}: enthält nur ein Bild ohne Text${/jsPDF/.test(md?.info?.Producer||'')?' (älterer NomNomZilla-Export)':''}. Das geht nur mit dem Claude-Import (API-Schlüssel).`
+    :`${file.name}${which}: kein NomNomZilla-Kartenlayout erkannt. Fremde Rezepte gehen nur mit dem Claude-Import (API-Schlüssel).`);
   return found;
 }
 async function handleFiles(files){
@@ -530,24 +562,27 @@ async function handleFiles(files){
   const log=m=>{const li=document.createElement('li');li.textContent=m;ul.append(li);note.textContent=m};
   const all=[];
   for(const f of files){
-    try{const list=await readPdf(f,log);if(!list.length)log(`${f.name}: kein Rezept erkannt.`);all.push(...list)}
-    catch(e){if(e?.code==='no_images')log(`${f.name}: enthält nur Bilder, die hier nicht an Claude gesendet werden können.`);else if(e?.code){if(impFail(e)){busy=false;return}log(`${f.name}: Fehler (${e.code}).`)}else log(`${f.name}: konnte nicht gelesen werden.`)}
+    try{const list=await readPdf(f,log);all.push(...list)}
+    catch(e){if(e?.code==='no_images')log(`${f.name}: enthält nur Bilder, die hier nicht an Claude gesendet werden können.`);else if(e?.code){impFail(e);log(`${f.name}: Fehler (${e.code}).`)}else log(`${f.name}: konnte nicht gelesen werden.`)}
   }
   busy=false;$('#impFile').value='';
   if(all.length)await finish(all,'PDF');else note.textContent='Keine Rezepte importiert.';
 }
 async function finish(list,src){
   const note=$('#impNote'),ul=$('#impLog');
-  if(list.length===1){close('#ovImp');ul.innerHTML='';note.textContent='';openEditor(list[0],true);toast('Bitte kurz prüfen und speichern.');return}
-  const dupe=r=>recipes.some(x=>norm(x.title)===norm(r.title));let ok=0;ul.innerHTML='';
+  if(list.length===1){close('#ovImp');ul.innerHTML='';note.textContent='';openEditor(list[0],true);toast(recipes.some(x=>norm(x.title)===norm(list[0].title))?'Ein Rezept mit diesem Titel gibt es schon. Bitte prüfen.':'Bitte kurz prüfen und speichern.');return}
+  // Gleicher Titel schon im Buch (oder doppelt in der Auswahl): überspringen statt doppelt anlegen
+  const seen=new Set(recipes.map(x=>norm(x.title)));let ok=0,skip=0;
   for(const r of list){
     const li=document.createElement('li');
+    if(seen.has(norm(r.title))){skip++;li.textContent=`– ${r.title}: gibt es schon, übersprungen`;ul.append(li);continue}
+    seen.add(norm(r.title));
     try{const ref=await db.collection('recipes').add({...r,createdBy:uid,updatedBy:uid,updatedAt:Date.now(),cookCount:0,source:src});ok++;
-      li.textContent=`✓ ${r.title}${dupe(r)?' (gab es schon – bitte prüfen)':''} · `;const b=document.createElement('button');b.type='button';b.textContent='öffnen';b.onclick=()=>{close('#ovImp');openDetail(ref.id)};li.append(b)}
+      li.textContent=`✓ ${r.title} · `;const b=document.createElement('button');b.type='button';b.textContent='öffnen';b.onclick=()=>{close('#ovImp');openDetail(ref.id)};li.append(b)}
     catch(e){li.textContent=`✗ ${r.title}: ${e?.code==='quota_exceeded'?'Rezeptbuch voll':'nicht gespeichert'}`}
     ul.append(li);
   }
-  note.textContent=`${ok} von ${list.length} Rezepten importiert.`;toast(`${ok} Rezepte importiert.`);
+  note.textContent=`${ok} von ${list.length} Rezepten importiert${skip?`, ${skip} schon vorhanden`:''}.`;toast(`${ok} Rezepte importiert.`);
 }
 $('#impFile').addEventListener('change',e=>handleFiles(e.target.files));
 const drop=$('#drop');
@@ -555,6 +590,12 @@ const drop=$('#drop');
 ['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));
 drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
 
+function impMode(){
+  $('#impAi').hidden=!sample;
+  $('#impIntro').textContent=sample?'Rezeptkarten im NomNomZilla-Layout werden direkt übernommen. Alles andere, auch Text, sortiert Claude in Zutaten, Schritte und Merkmale. Ein einzelnes Rezept kannst du vor dem Speichern prüfen, mehrere landen direkt im Buch.'
+    :'Rezeptkarten-PDFs im NomNomZilla-Layout werden direkt übernommen, ganz ohne Internet. Ein einzelnes Rezept kannst du vor dem Speichern prüfen, mehrere landen direkt im Buch.';
+  $('#impHint').textContent=sample?'Eigene Rezeptkarten, Kochbuchseiten, gescannte Rezepte – auch mehrere Dateien und mehrseitige PDFs':'Eigene Rezeptkarten aus dem Export oder nach demselben Muster – auch mehrere Dateien und mehrseitige PDFs';
+}
 /* ---------- Bedienung ---------- */
 function close(sel){$(sel).hidden=true;if(sel==='#ovDetail'){st.open=null;pvRO?.disconnect()}}
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o||e.target.closest('[data-close]'))close('#'+o.id)}));
@@ -578,7 +619,7 @@ $('#impBtn').addEventListener('click',()=>{$('#ovImp').hidden=false;$('#impLog')
   if(u){try{uid=await u.id()}catch(_){};try{const c=await u.can('data.write');if(c===false)canWrite=false}catch(_){}}
   if(!db){canWrite=false;loaded=true;$('#list').innerHTML='<p class="empty">Das Rezeptbuch ist gerade nicht erreichbar. Läuft der Container?</p>';}
   if(!canWrite){$('#newBtn').hidden=true}
-  if(sample&&canWrite)$('#impBtn').hidden=false;
+  if(canWrite)$('#impBtn').hidden=false;impMode();
   if(!db)return;
   const timer=setTimeout(()=>{if(!loaded){loaded=true;$('#list').innerHTML='<p class="empty">Die Rezepte lassen sich gerade nicht laden. Prüfe die Verbindung, die Seite versucht es weiter.</p>'}},10000);
   db.collection('recipes').onSnapshot(snap=>{
