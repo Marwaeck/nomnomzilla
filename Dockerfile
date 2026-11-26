@@ -1,6 +1,8 @@
 # Bibliotheken für Kartenexport und PDF-Import einmalig beim Build holen,
 # damit die App komplett ohne Internet (kein CDN, keine Google Fonts) funktioniert.
-FROM node:22-alpine AS vendor
+# Läuft immer auf der Build-Architektur (npm stürzt unter QEMU-Emulation ab);
+# die Dateien sind plattformunabhängig.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS vendor
 WORKDIR /v
 RUN npm init -y >/dev/null \
  && npm install --no-audit --no-fund html2canvas@1.4.1 jspdf@2.5.1 pdfjs-dist@3.11.174 @fontsource/inter@5 @fontsource/bricolage-grotesque@5 \
