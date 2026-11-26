@@ -23,7 +23,7 @@ Kartenexport, Suche, Assistent und Bearbeiten laufen komplett im Container und i
    ```
 2. **Docker** → **Container hinzufügen** → bei „Vorlage“ **NomNomZilla** auswählen.
 3. Optional Passwort und Anthropic-API-Schlüssel eintragen, dann **Anwenden**.
-4. Die App ist unter `http://<unraid-ip>:8080` erreichbar.
+4. Die App ist unter `http://<unraid-ip>:6767` erreichbar.
 
 ### Variante B: Ohne Template
 
@@ -32,7 +32,7 @@ Docker → Container hinzufügen, und von Hand eintragen:
 | Feld | Wert |
 |---|---|
 | Repository | `ghcr.io/marwaeck/nomnomzilla:latest` |
-| Port | Container `8080` → Host `8080` |
+| Port | Container `8080` → Host `6767` (oder ein anderer freier Port) |
 | Pfad | Container `/data` → Host `/mnt/user/appdata/nomnomzilla` |
 
 ### Updates
@@ -56,6 +56,12 @@ Jeder Push auf `main` baut über GitHub Actions automatisch ein neues Image. In 
 3. Jetzt erscheint der Button **Importieren**. PDFs mit Text kosten pro Rezept etwa einen Cent, gescannte Seiten etwas mehr, weil jede Seite als Bild gelesen wird.
 
 Der Schlüssel bleibt auf dem Server, der Browser bekommt ihn nie zu sehen.
+
+## Wenn der Container nicht startet
+
+- **Port belegt:** Meldet Unraid beim Start „port is already allocated“, ist der Host-Port schon vergeben. Im Template einen anderen Port eintragen. Ports 6665–6669 meiden, die blockieren Browser.
+- **Log ansehen:** Docker-Tab → NomNomZilla-Symbol → **Logs**. Bei einem normalen Start steht dort „NomNomZilla läuft auf Port 8080“.
+- **Rechte:** Der Container übernimmt `/mnt/user/appdata/nomnomzilla` beim Start selbst für `PUID:PGID` (99:100).
 
 ## Daten und Sicherung
 
