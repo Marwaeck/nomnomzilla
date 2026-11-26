@@ -2,6 +2,8 @@
 
 ![NomNomZilla](docs/social-preview.png)
 
+**Website:** [marwaeck.github.io/nomnomzilla](https://marwaeck.github.io/nomnomzilla/)
+
 Das Familien-Rezeptbuch für den eigenen Server. Läuft als Docker-Container, zum Beispiel auf Unraid, und ist im Heimnetz von jedem Gerät per Browser erreichbar.
 
 - **Rezepte suchen und gruppieren** nach Kategorie, Küche, Ernährung, Zeit, Schwierigkeit, Saison, Hauptzutat oder Stichwort
@@ -98,3 +100,7 @@ Damit NomNomZilla unter **Apps** (Community Applications) für alle auftaucht:
 1. Repo öffentlich lassen, Template liegt unter `unraid/nomnomzilla.xml`.
 2. Im [Unraid-Forum](https://forums.unraid.net/) einen Support-Thread anlegen und dessen Link als `<Support>` im Template eintragen.
 3. Das Repo bei Community Applications einreichen (Anleitung im Forum-Bereich „Docker Containers“ → „Community Applications“).
+
+## Projekt-Website
+
+Die Website unter [marwaeck.github.io/nomnomzilla](https://marwaeck.github.io/nomnomzilla/) liegt im Ordner `docs/` und wird mit Jekyll gebaut. Jeder Push auf `main`, der `docs/` ändert, veröffentlicht sie über GitHub Actions neu. Lokal ansehen: `jekyll serve -s docs`.

@@ -1,0 +1,9 @@
+title: NomNomZilla
+description: Das Familien-Rezeptbuch für den eigenen Server. Rezepte suchen, als DIN-A4-Karte exportieren und fragen, was es heute gibt.
+lang: de
+url: https://marwaeck.github.io
+baseurl: /nomnomzilla
+repo: https://github.com/Marwaeck/nomnomzilla
+image: ghcr.io/marwaeck/nomnomzilla:latest
+exclude:
+  - README.md

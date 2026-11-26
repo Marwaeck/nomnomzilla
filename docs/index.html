@@ -1,0 +1,181 @@
+---
+layout: default
+---
+{% assign img = '/assets/img/' | relative_url %}
+<header class="hero">
+  <nav class="nav wrap">
+    <a class="brand" href="{{ '/' | relative_url }}"><img src="{{ img }}icon.svg" alt="" width="36" height="36">NomNomZilla</a>
+    <span class="nav-links">
+      <a href="#funktionen">Funktionen</a>
+      <a href="#installieren">Installieren</a>
+      <a href="#claude">Claude-Import</a>
+      <a href="{{ site.repo }}">GitHub</a>
+    </span>
+  </nav>
+  <div class="wrap hero-grid">
+    <div>
+      <p class="kicker">Rezeptbuch · selbst gehostet · Docker</p>
+      <h1>Nom nom! Euer Familien&shy;rezeptbuch auf dem eigenen Server.</h1>
+      <p class="lead">NomNomZilla läuft als kleiner Docker-Container auf deinem Unraid-Server oder in Docker Desktop. Im Heimnetz ist es auf jedem Handy, Tablet und Laptop erreichbar, und jedes Rezept wird auf Knopfdruck zur hübschen DIN-A4-Rezeptkarte.</p>
+      <div class="cta">
+        <a class="btn" href="#installieren">Jetzt installieren</a>
+        <a class="btn ghost" href="{{ site.repo }}">Quellcode ansehen</a>
+      </div>
+      <p class="fine">Kostenlos, ohne Cloud, ohne Konto. Funktioniert komplett offline.</p>
+    </div>
+    <div class="zilla" aria-hidden="true">
+      <img src="{{ img }}icon.svg" alt="" width="320" height="320">
+      <span class="crumb c1"></span><span class="crumb c2"></span><span class="crumb c3"></span>
+      <span class="bubble">Nom nom!</span>
+    </div>
+  </div>
+  <svg class="wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30 Q 60 0 120 30 T 240 30 T 360 30 T 480 30 T 600 30 T 720 30 T 840 30 T 960 30 T 1080 30 T 1200 30 T 1320 30 T 1440 30 V60 H0Z"/></svg>
+</header>
+
+<main>
+  <section class="wrap shot-hero">
+    <img src="{{ img }}app-kopf.jpg" width="1600" height="625" alt="Startseite von NomNomZilla mit Suchfeld, Zilla-Icon und den Knöpfen „Was essen wir heute?“ und „Neues Rezept“" loading="lazy">
+  </section>
+
+  <section id="funktionen" class="wrap">
+    <h2>Was NomNomZilla kann</h2>
+    <p class="sub">Alles, was ein Familien-Rezeptbuch braucht, und nichts, was nervt.</p>
+    <div class="features">
+      <article class="f" style="--c:#F2D98C"><span class="ico">🔍</span><h3>Finden statt suchen</h3><p>Suche nach Rezept, Zutat oder Stichwort. Gruppiere nach Kategorie, Küche, Ernährung, Zeit, Schwierigkeit, Saison oder Hauptzutat.</p></article>
+      <article class="f" style="--c:#F5B567"><span class="ico">🖨️</span><h3>Rezeptkarten exportieren</h3><p>Jedes Rezept als DIN-A4-Karte im PDF-, PNG- oder HTML-Format. Mehrere Karten landen auf Wunsch in einem PDF.</p></article>
+      <article class="f" style="--c:#BCCFAE"><span class="ico">🤔</span><h3>Was essen wir heute?</h3><p>Vier kurze Fragen, dann ein Vorschlag aus euren Rezepten. Bevorzugt das, was ihr länger nicht gekocht habt.</p></article>
+      <article class="f" style="--c:#B4CDE0"><span class="ico">🔄</span><h3>Live auf allen Geräten</h3><p>Was auf dem Handy gespeichert wird, steht sofort auch auf dem Tablet in der Küche.</p></article>
+      <article class="f" style="--c:#F2A68F"><span class="ico">📄</span><h3>Eigene Karten wieder einlesen</h3><p>Exportierte Rezeptkarten-PDFs lassen sich wieder hochladen, auch viele auf einmal. Ganz ohne Internet.</p></article>
+      <article class="f" style="--c:#E6AAB8"><span class="ico">✨</span><h3>Import mit Claude</h3><p>Optional: Fremde PDFs, Scans und Text liest Claude ein und macht daraus ein sauberes Rezept.</p></article>
+    </div>
+  </section>
+
+  <section class="wrap gallery">
+    <h2>Ein Blick hinein</h2>
+    <div class="shots">
+      <figure class="tilt-l wide"><img src="{{ img }}rezeptkarte.jpg" width="1600" height="1075" alt="Rezeptansicht der Kürbissuppe mit Rezeptkarte und Export-Knöpfen" loading="lazy"><figcaption>Rezept öffnen, Karte exportieren</figcaption></figure>
+      <figure class="tilt-r"><img src="{{ img }}pdf-export.jpg" width="745" height="1053" alt="Exportierte DIN-A4-Rezeptkarte als PDF" loading="lazy"><figcaption>Die fertige DIN-A4-Karte</figcaption></figure>
+      <figure class="tilt-l"><img src="{{ img }}handy.jpg" width="600" height="1298" alt="NomNomZilla auf dem Handy" loading="lazy"><figcaption>Passt auch aufs Handy</figcaption></figure>
+      <figure class="tilt-r wide"><img src="{{ img }}vorschlag.jpg" width="1600" height="1075" alt="Assistent „Was essen wir heute?“ mit der Frage nach der verfügbaren Zeit" loading="lazy"><figcaption>„Was essen wir heute?“</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="installieren" class="wrap">
+    <h2>Installieren</h2>
+    <p class="sub">Such dir aus, wo Zilla wohnen soll. Das Image <code>{{ site.image }}</code> läuft auf Intel/AMD und ARM, also auch auf Apple-Silicon-Macs und dem Raspberry Pi.</p>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" aria-controls="t-unraid" id="b-unraid">Unraid</button>
+      <button role="tab" aria-selected="false" aria-controls="t-desktop" id="b-desktop">Docker Desktop</button>
+      <button role="tab" aria-selected="false" aria-controls="t-compose" id="b-compose">Docker Compose</button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="t-unraid" aria-labelledby="b-unraid">
+      <h3>Unraid</h3>
+      <ol class="steps">
+        <li>Im Unraid-Terminal das Template einmal hinterlegen:
+<pre><code>wget -O /boot/config/plugins/dockerMan/templates-user/my-NomNomZilla.xml \
+  https://raw.githubusercontent.com/Marwaeck/nomnomzilla/main/unraid/nomnomzilla.xml</code></pre></li>
+        <li><b>Docker</b> → <b>Container hinzufügen</b> → bei „Vorlage“ <b>NomNomZilla</b> wählen.</li>
+        <li>Optional Passwort und Anthropic-API-Schlüssel eintragen, dann <b>Anwenden</b>.</li>
+        <li>Fertig: <code>http://&lt;unraid-ip&gt;:6767</code> im Browser öffnen.</li>
+      </ol>
+      <p class="note">Updates kommen automatisch: Bei jeder neuen Version zeigt Unraid „Update verfügbar“, ein Klick genügt. Die Rezepte liegen in <code>/mnt/user/appdata/nomnomzilla</code> und bleiben erhalten.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="t-desktop" aria-labelledby="b-desktop">
+      <h3>Docker Desktop (Windows, Mac, Linux)</h3>
+      <ol class="steps">
+        <li><a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a> installieren und starten.</li>
+        <li>Ein Terminal öffnen (Windows: PowerShell, Mac: Terminal) und diesen einen Befehl einfügen:
+<pre><code>docker run -d --name nomnomzilla --restart unless-stopped -p 6767:8080 -v nomnomzilla-data:/data ghcr.io/marwaeck/nomnomzilla:latest</code></pre></li>
+        <li><a href="http://localhost:6767">http://localhost:6767</a> öffnen. Im Heimnetz erreichen die anderen Geräte NomNomZilla unter der IP deines Rechners, zum Beispiel <code>http://192.168.1.20:6767</code>.</li>
+      </ol>
+      <p class="note">Die Rezepte liegen im Docker-Volume <code>nomnomzilla-data</code>. In Docker Desktop findest du es unter <b>Volumes</b>. Zum Aktualisieren den Container in Docker Desktop löschen (das Volume bleibt), <code>docker pull ghcr.io/marwaeck/nomnomzilla:latest</code> ausführen und den Befehl oben erneut starten. Bequemer geht das mit Compose.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="t-compose" aria-labelledby="b-compose">
+      <h3>Docker Compose</h3>
+      <ol class="steps">
+        <li>Einen Ordner anlegen und <a href="{{ site.repo }}/blob/main/docker-compose.yml">docker-compose.yml</a> sowie <a href="{{ site.repo }}/blob/main/.env.example">.env.example</a> hineinladen.</li>
+        <li><code>.env.example</code> in <code>.env</code> umbenennen und bei Bedarf Passwort, API-Schlüssel oder Port eintragen.</li>
+        <li>Im Ordner starten:
+<pre><code>docker compose up -d</code></pre></li>
+        <li><a href="http://localhost:6767">http://localhost:6767</a> öffnen.</li>
+      </ol>
+      <p class="note">Aktualisieren: <code>docker compose pull &amp;&amp; docker compose up -d</code>. Die Rezepte bleiben im Volume <code>nomnomzilla-data</code>.</p>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Einstellungen</h2>
+    <p class="sub">Alles optional. Ohne Einstellungen läuft NomNomZilla sofort.</p>
+    <div class="table">
+      <table>
+        <thead><tr><th>Variable</th><th>Wofür</th></tr></thead>
+        <tbody>
+          <tr><td><code>APP_PASSWORD</code></td><td>Passwortschutz. Der Browser fragt einmal nach Benutzername (beliebig) und Passwort.</td></tr>
+          <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Schaltet den Claude-Import für fremde PDFs und Text frei.</td></tr>
+          <tr><td><code>ANTHROPIC_MODEL</code></td><td>Modell für den Import, Standard <code>claude-sonnet-5-5</code>.</td></tr>
+          <tr><td><code>PUID</code> / <code>PGID</code></td><td>Besitzer der Dateien in <code>/data</code>, Standard <code>99</code>/<code>100</code> (Unraid).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="claude" class="wrap claude">
+    <div class="claude-card">
+      <div>
+        <h2>Import mit Claude scharfschalten</h2>
+        <p>Rezept aus der Zeitschrift abfotografiert, PDF von der Freundin bekommen oder Text aus einem Blog kopiert? Mit einem Anthropic-API-Schlüssel liest Claude das ein und füllt alle Felder aus. Ohne Schlüssel funktioniert alles andere ganz normal.</p>
+        <ol class="steps">
+          <li>Unter <a href="https://console.anthropic.com">console.anthropic.com</a> einen API-Schlüssel anlegen und etwas Guthaben aufladen.</li>
+          <li>Den Schlüssel als <code>ANTHROPIC_API_KEY</code> eintragen (Unraid-Template, <code>.env</code> oder <code>-e</code> beim <code>docker run</code>) und den Container neu starten.</li>
+          <li>Unter <b>Importieren</b> kannst du jetzt auch fremde PDFs und Text einlesen.</li>
+        </ol>
+        <p class="fine">Kosten: etwa ein Cent pro Rezept, gescannte Seiten etwas mehr. Der Schlüssel bleibt auf dem Server, der Browser sieht ihn nie.</p>
+      </div>
+      <figure class="tilt-r"><img src="{{ img }}import.jpg" width="617" height="874" alt="Eine importierte Rezeptkarte für Eierlikörkuchen" loading="lazy"></figure>
+    </div>
+  </section>
+
+  <section class="wrap faq">
+    <h2>Gut zu wissen</h2>
+    <details><summary>Braucht NomNomZilla Internet?</summary><p>Nein. Suche, Bearbeiten, Kartenexport und PDF-Upload laufen komplett im Container und im Browser. Es werden keine CDNs oder Schriften aus dem Internet geladen. Nur der optionale Claude-Import spricht mit der Anthropic-API.</p></details>
+    <details><summary>Wo liegen meine Rezepte, und wie sichere ich sie?</summary><p>In einer einzigen Datei <code>recipes.json</code> im Datenordner (Unraid: <code>/mnt/user/appdata/nomnomzilla</code>, Docker Desktop: Volume <code>nomnomzilla-data</code>). Zusätzlich lädt der Knopf <b>Sicherung herunterladen</b> in der App die aktuelle Datei herunter.</p></details>
+    <details><summary>Kann ich von unterwegs zugreifen?</summary><p>Am einfachsten über ein VPN wie WireGuard oder Tailscale. Wenn du NomNomZilla über einen Reverse Proxy ins Internet stellst, setz unbedingt <code>APP_PASSWORD</code> und nutze HTTPS.</p></details>
+    <details><summary>Der Container startet nicht.</summary><p>Meist ist der Port schon belegt („port is already allocated“). Dann einen anderen Host-Port nehmen, zum Beispiel <code>-p 6780:8080</code>. Ports 6665 bis 6669 meiden, die blockieren Browser. Im Log steht bei einem normalen Start „NomNomZilla läuft auf Port 8080“.</p></details>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <img src="{{ img }}icon.svg" alt="" width="56" height="56">
+    <p>NomNomZilla wird mit Hunger und Liebe gebaut.<br><a href="{{ site.repo }}">GitHub</a> · <a href="{{ site.repo }}/issues">Fehler melden</a> · <a href="{{ site.repo }}/pkgs/container/nomnomzilla">Docker-Image</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll('[role=tab]');
+  var panels = document.querySelectorAll('[role=tabpanel]');
+  document.documentElement.classList.add('js');
+  function show(id) {
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('aria-controls') === id); });
+    panels.forEach(function (p) { p.hidden = p.id !== id; });
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.getAttribute('aria-controls')); }); });
+  show(/Mac|Win/.test(navigator.platform) ? 't-desktop' : 't-unraid');
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy'; b.type = 'button'; b.textContent = 'Kopieren';
+    b.addEventListener('click', function () {
+      navigator.clipboard.writeText(pre.querySelector('code').innerText.trim()).then(function () {
+        b.textContent = 'Kopiert!'; setTimeout(function () { b.textContent = 'Kopieren'; }, 1500);
+      });
+    });
+    var box = document.createElement('div'); box.className = 'codebox';
+    pre.parentNode.insertBefore(box, pre); box.appendChild(pre); box.appendChild(b);
+  });
+})();
+</script>
