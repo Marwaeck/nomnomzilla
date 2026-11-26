@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>NomNomZilla</Name>
+  <Repository>ghcr.io/marwaeck/nomnomzilla:latest</Repository>
+  <Registry>https://github.com/Marwaeck/nomnomzilla/pkgs/container/nomnomzilla</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/Marwaeck/nomnomzilla/issues</Support>
+  <Project>https://github.com/Marwaeck/nomnomzilla</Project>
+  <Overview>NomNomZilla – das Familien-Rezeptbuch im Browser: Rezepte suchen und gruppieren, als DIN-A4-Rezeptkarte (PDF, PNG, HTML) exportieren, „Was essen wir heute?“-Assistent und Import aus Text oder PDF mit Claude (optional, eigener Anthropic-API-Schlüssel). Alle Daten liegen als JSON im AppData-Ordner.</Overview>
+  <Category>Tools: Productivity:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/Marwaeck/nomnomzilla/main/unraid/nomnomzilla.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Marwaeck/nomnomzilla/main/public/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI-Port" Target="8080" Default="8080" Mode="tcp" Description="Port der Weboberfläche" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Daten" Target="/data" Default="/mnt/user/appdata/nomnomzilla" Mode="rw" Description="Hier liegen die Rezepte (recipes.json). In das Backup aufnehmen." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/nomnomzilla</Config>
+  <Config Name="Passwort" Target="APP_PASSWORD" Default="" Mode="" Description="Optional. Wenn gesetzt, fragt der Browser einmal nach Benutzername (beliebig) und diesem Passwort." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Anthropic API-Schlüssel" Target="ANTHROPIC_API_KEY" Default="" Mode="" Description="Optional. Aktiviert „Importieren“ (Text und PDF). Schlüssel unter console.anthropic.com anlegen." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Claude-Modell" Target="ANTHROPIC_MODEL" Default="claude-sonnet-5-5" Mode="" Description="Modell für den Import." Type="Variable" Display="advanced" Required="false" Mask="false">claude-sonnet-5-5</Config>
+</Container>

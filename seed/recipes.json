@@ -1,0 +1,96 @@
+[
+ {
+  "category": "Pasta",
+  "color": "lachs",
+  "cookCount": 0,
+  "cookware": "1 großer Topf",
+  "cuisine": "Italienisch",
+  "diet": "mit Fleisch",
+  "difficulty": "einfach",
+  "icon": "topf",
+  "ingredients": [
+   {
+    "a": "220 g",
+    "n": "Rigatoni"
+   },
+   {
+    "a": "150 g",
+    "n": "Bacon, in Scheiben"
+   },
+   {
+    "a": "240 ml",
+    "n": "Hühnerbrühe"
+   },
+   {
+    "a": "240 ml",
+    "n": "Sahne"
+   },
+   {
+    "a": "60 g",
+    "n": "getrocknete Tomaten"
+   },
+   {
+    "a": "2 EL",
+    "n": "Tomatenmark"
+   },
+   {
+    "a": "30 g",
+    "n": "Parmesan"
+   },
+   {
+    "a": "30 ml",
+    "n": "trockener Weißwein (optional)"
+   },
+   {
+    "a": "½",
+    "n": "Zwiebel, gewürfelt"
+   },
+   {
+    "a": "2 Zehen",
+    "n": "Knoblauch, gehackt"
+   },
+   {
+    "a": "1 TL",
+    "n": "Chiliflocken"
+   },
+   {
+    "a": "nach Bedarf",
+    "n": "Salz und Pfeffer"
+   },
+   {
+    "a": "1 Handvoll",
+    "n": "frische Basilikumblätter"
+   }
+  ],
+  "mainIngredient": "Pasta",
+  "minutes": 20,
+  "season": [],
+  "servings": "ca. 2 Portionen",
+  "steps": [
+   {
+    "t": "Bacon auslassen",
+    "x": "Bacon in einem großen Topf bei mittlerer Hitze langsam knusprig braten, damit das Fett austritt. Zwiebel, Knoblauch, getrocknete Tomaten und optional Chiliflocken zugeben. **4–5 Minuten** braten, bis die Zwiebel weich ist."
+   },
+   {
+    "t": "Tomatenmark rösten",
+    "x": "Tomatenmark einrühren und **2 Minuten** anrösten. Optional mit Weißwein ablöschen und kurz einkochen lassen."
+   },
+   {
+    "t": "Pasta garen",
+    "x": "Brühe und Sahne zugießen. Pasta hinzufügen und sanft aufkochen. Bei niedriger bis mittlerer Hitze mit Deckel köcheln lassen und gelegentlich umrühren. Falls die Flüssigkeit vor der Pasta verkocht, etwas heißes Wasser nachgießen."
+   },
+   {
+    "t": "Fertigstellen",
+    "x": "Sobald die Pasta bissfest und die Sauce cremig ist, den Topf vom Herd nehmen. Parmesan und Basilikum einrühren. Abschmecken – Brühe und Bacon sind bereits salzig."
+   }
+  ],
+  "subtitle": "Knuspriger Bacon, Tomate und Basilikum in einer samtigen Sauce.",
+  "tags": [
+   "One Pot"
+  ],
+  "tip": "Am besten direkt aus dem Topf servieren.",
+  "title": "Cremige Bacon-One-Pot-Pasta",
+  "updatedAt": 1795675200000,
+  "id": "bacon-one-pot-pasta"
+ }
+]
