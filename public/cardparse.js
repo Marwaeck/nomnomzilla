@@ -24,6 +24,7 @@
     } catch (_) { return null; }
   }
 
+  const PUA = { '\uE081': '(', '\uE082': ')', '\uE089': '–', '\uE09F': '×' };
   // ---------- Text mit Positionen aus einer pdf.js-Seite ----------
   async function pageItems(page) {
     const vp = page.getViewport({ scale: 1 });
@@ -43,11 +44,14 @@
       const h = Math.hypot(it.transform[2], it.transform[3]) || it.height;
       if (!h) continue;
       let s = it.str;
-      // Zeichen ohne Unicode-Zuordnung landen im Private-Use-Bereich;
-      // bei Chrome-PDFs ist das einzeln stehend praktisch immer der Gedankenstrich „–“
-      if (/^[\uE000-\uF8FF]$/.test(s) && it.width > h * 0.3 && it.width < h * 1.1) s = '–';
-      s = s.replace(/[\uE000-\uF8FF]/g, '');
-      if (!s.trim()) continue;
+      // Zeichen ohne Unicode-Zuordnung landen im Private-Use-Bereich. In Chrome-PDFs mit der
+      // Schrift Inter sind das immer dieselben: ( ) – ×. Unbekannte einzelne mit Strichbreite → „–“.
+      s = s.replace(/[\uE000-\uF8FF]/g, c => PUA[c] ?? (it.width > h * 0.3 && it.width < h * 0.6 && s.length === 1 ? '–' : '')).replace(/\u00AD/g, '');
+      if (!s.trim()) {
+        // breites Leerzeichen = Wortgrenze in gesperrter Schrift
+        if (items.length && it.width > h * 0.45) items[items.length - 1].ws = true;
+        continue;
+      }
       items.push({ s, x: it.transform[4], y: vp.height - it.transform[5], w: it.width, h, b: !!bold[it.fontName] });
     }
     return { items, width: vp.width, height: vp.height };
@@ -115,116 +119,224 @@
   const titleCase = s => s.toLowerCase().replace(/(^|[\s\-/])(\p{L})/gu, (m, a, c) => a + c.toUpperCase());
 
   // ---------- Kartenlayout lesen ----------
-  function parseCard({ items }, opt = {}) {
-    const CATS = opt.cats || [];
-    const all = lines(items, false);
-    const find = word => {
-      for (const l of all) for (const r of l.runs) if (squash(r.text) === word) return r;
-      return null;
-    };
-    const hZ = find('ZUTATEN'), hS = find('ZUBEREITUNG');
-    if (!hZ || !hS || hS.x <= hZ.x) return null;
-    const yBody = Math.min(hZ.y, hS.y);
-    const xR = hS.x;
-
-    // Kopf + Menge/Zeit/Kochgeschirr
-    const metaL = ['MENGE', 'ZEIT', 'KOCHGESCHIRR'].map(find);
-    const yMeta = Math.min(...metaL.filter(Boolean).map(m => m.y), yBody);
-    const headIt = items.filter(it => it.y < yMeta - 4);
-    const head = lines(headIt, false);
-    let label = '';
-    if (head.length && /REZEPTKARTE/.test(squash(head[0].text))) label = lines(head.shift().items, true)[0].text;
-    const maxH = Math.max(0, ...head.map(l => l.h));
-    const tLines = head.filter(l => l.h >= maxH * 0.8);
-    const title = plain(joinSegs(tLines));
-    const subtitle = plain(joinSegs(head.filter(l => l.h < maxH * 0.8 && l.y > (tLines[0]?.y ?? 0))));
-    const meta = metaL.map((m, i) => {
-      if (!m) return '';
-      const nx = metaL.slice(i + 1).find(Boolean)?.x ?? Infinity;
-      return plain(joinSegs(lines(items.filter(it => it.y > m.y + 1 && it.y < yBody - 4 && it.x >= m.x - 4 && it.x < nx - 4), false)));
-    });
-
-    // Etikett: REZEPTKARTE · KATEGORIE · STICHWORT
-    let category = '', tags = [];
+  const UPPER = t => /\p{Lu}/u.test(t) && !/\p{Ll}/u.test(t);
+  const CAT_ALIAS = { SUPPEN: 'Suppe', EINTOPF: 'Suppe', KUCHEN: 'Gebäck', TORTE: 'Gebäck', TORTEN: 'Gebäck', BROT: 'Gebäck', BACKEN: 'Gebäck', PIZZA: 'Hauptgericht', FLEISCH: 'Hauptgericht', FISCH: 'Hauptgericht', NUDELN: 'Pasta', SALATE: 'Salat', DESSERTS: 'Dessert', NACHTISCH: 'Dessert', GETRÄNKE: 'Getränk', DRINKS: 'Getränk', BEILAGEN: 'Beilage', SNACKS: 'Snack', VORSPEISEN: 'Vorspeise' };
+  // Minuten aus „1 Std. 10 Min.“, „30 Minuten“, „10–15 Min.“ (untere Grenze), „bis 22 Std.“
+  function toMinutes(v) {
+    v = String(v || '').replace(/(\d)\s*[–-]\s*\d+/g, '$1');
+    const h = v.match(/(\d+(?:[.,]\d+)?)\s*(?:Std|Stunde|h\b)/i), m = v.match(/(\d+)\s*(?:Min|m\b)/i);
+    return h || m ? Math.round((h ? parseFloat(h[1].replace(',', '.')) * 60 : 0) + (m ? +m[1] : 0)) : null;
+  }
+  function labelText(line) {
+    if (line.items.length >= 4) {
+      // Gesperrte Schrift als Einzelstücke: Wortgrenzen stecken in breiten Leerzeichen
+      return line.items.map(it => it.s.replace(/ /g, '') + (it.ws ? ' ' : '')).join('').replace(/\s*·\s*/g, ' · ').trim();
+    }
+    return line.text;
+  }
+  function parseLabel(label, CATS, knownTags) {
     // Gesperrte Schrift kommt je nach PDF-Erzeuger als „K I N D E R“ heraus: Leerzeichen dann entfernen
     // und über bekannte Kategorien/Stichworte die richtige Schreibweise (mit Leerzeichen) zurückholen.
-    const known = [...CATS, ...(opt.tags || [])];
+    const known = [...CATS, ...knownTags];
     const parts = label.split('·').map(p => {
       const tok = p.trim().split(/\s+/).filter(Boolean);
       const spaced = tok.length > 2 && tok.filter(t => t.length <= 2).length >= tok.length * 0.7;
       const txt = spaced ? tok.join('') : tok.join(' ');
       return known.find(k => squash(k) === squash(txt)) || titleCase(txt);
     }).filter(Boolean).slice(1);
+    let category = '';
     if (parts.length) {
       const c = CATS.find(c => squash(c) === squash(parts[0]));
-      if (c) { category = c; parts.shift(); }
-      tags = parts;
+      const a = CAT_ALIAS[squash(parts[0])];
+      if (c) { category = c; parts.shift(); } else if (a && CATS.includes(a)) { category = a; if (squash(parts[0]).startsWith(squash(a))) parts.shift(); } // „Kuchen“ bleibt als Stichwort, „Suppen“ nicht
     }
-
-    // Linke Spalte: Zutaten (Menge | Zutat) und Tipp
-    const left = items.filter(it => it.y > yBody + 2 && it.x < xR - 6);
-    const tipIt = lines(left, false).flatMap(l => l.runs).find(r => squash(r.text) === 'TIPP');
-    const ingIt = left.filter(it => !tipIt || it.y < tipIt.y - 2);
-    const tip = tipIt ? marked(joinSegs(lines(left.filter(it => it.y > tipIt.y + 2), false))) : '';
-    const ingL = lines(ingIt, false);
-    const second = ingL.filter(l => l.runs.length > 1).map(l => l.runs[1].x).sort((a, b) => a - b);
-    const nameX = second.length ? second[second.length >> 1] : hZ.x + 1e4;
-    const rows = [];
-    let lastY = -1e9;
-    for (const l of ingL) {
-      const part = f => plain(l.runs.filter(f).flatMap(r => [{ s: ' ', b: false }, ...r.segs]));
-      const a = part(r => r.x < nameX - 3), nT = part(r => r.x >= nameX - 3);
-      const cont = rows.length && l.y - lastY < l.h * 1.7;
-      if (cont) { const r = rows[rows.length - 1]; if (a) r.a = (r.a + ' ' + a).trim(); if (nT) r.n = (r.n + ' ' + nT).trim(); }
-      else rows.push({ a, n: nT });
-      lastY = l.y;
-    }
-    // Leerzeichen zwischen Zahl und Einheit sicherstellen („220g“ → „220 g“)
-    const ingredients = rows.filter(r => r.n).map(r => ({ a: r.a.replace(/(\d)([a-zA-ZäöüÄÖÜ])/g, '$1 $2'), n: r.n }));
-
-    // Rechte Spalte: nummerierte Schritte
-    const right = items.filter(it => it.y > yBody + 2 && it.x >= xR - 20);
-    const rl = lines(right, false);
-    const steps = [];
-    let cur = null;
-    for (const l of rl) {
-      const isNum = l.runs.length > 1 && /^\d{1,2}\.?$/.test(l.runs[0].text);
-      const segs = isNum ? l.runs.slice(1).flatMap((r, i) => i ? [{ s: ' ', b: false }, ...r.segs] : r.segs) : l.segs;
-      if (isNum || !cur) { cur = { lines: [] }; steps.push(cur); }
-      cur.lines.push({ segs });
-    }
-    const outSteps = steps.map(st => {
-      const segs = joinSegs(st.lines);
-      const txt = plain(segs);
-      const dot = txt.indexOf('·');
-      if (dot > 0 && dot <= 50) {
-        // Kurztitel bis zum „·“, Rest als Beschreibung
-        let n = 0; const rest = [];
-        for (const sg of segs) {
-          if (n > dot) { rest.push(sg); continue; }
-          const k = sg.s.indexOf('·');
-          if (k >= 0 && n + sg.s.length > dot) rest.push({ ...sg, s: sg.s.slice(k + 1) });
-          n += sg.s.length;
-        }
-        return { t: txt.slice(0, dot).trim(), x: marked(rest) };
+    return { category, tags: parts };
+  }
+  // Kästen (Tipp, Hinweis, Backform …): erste Zeile ist die Überschrift
+  function boxText(ls) {
+    if (!ls.length) return '';
+    const [hd, ...rest] = ls;
+    if (!rest.length) return marked(joinSegs([hd]));
+    const body = marked(joinSegs(rest));
+    return /^tipp/i.test(hd.text) ? body : `${UPPER(hd.text) ? titleCase(hd.text) : hd.text}: ${body}`;
+  }
+  function splitBoxes(ls) {
+    const out = [];
+    ls.forEach((l, i) => { if (!i || l.y - ls[i - 1].y > l.h * 2.4) out.push([]); out[out.length - 1].push(l); });
+    return out;
+  }
+  function stepFrom(segs) {
+    const txt = plain(segs);
+    const dot = txt.indexOf('·');
+    if (dot > 0 && dot <= 50) {
+      // Kurztitel bis zum „·“, Rest als Beschreibung
+      let n = 0; const rest = [];
+      for (const sg of segs) {
+        if (n > dot) { rest.push(sg); continue; }
+        const k = sg.s.indexOf('·');
+        if (k >= 0 && n + sg.s.length > dot) rest.push({ ...sg, s: sg.s.slice(k + 1) });
+        n += sg.s.length;
       }
-      return { t: '', x: marked(segs) };
-    }).filter(s => s.x);
+      return { t: txt.slice(0, dot).trim(), x: marked(rest) };
+    }
+    return { t: '', x: marked(segs) };
+  }
 
-    const min = meta[1] || '';
+  function parseCard({ items }, opt = {}) {
+    const CATS = opt.cats || [];
+    let all = lines(items, false);
+    // „Meine Notizen“ am Kartenende abschneiden
+    const notes = all.find(l => /^(MEINE)?NOTIZEN$/.test(squash(l.text)));
+    if (notes) { items = items.filter(it => it.y < notes.y - 2); all = lines(items, false); }
+    const runs = all.flatMap(l => l.runs);
+    const find = word => runs.find(r => squash(r.text) === word) || null;
+
+    const labelLine = all.slice(0, 3).find(l => /REZEPTKARTE/.test(squash(l.text)));
+    let hZ = find('ZUTATEN'), hS = find('ZUBEREITUNG');
+    if (!hZ || !hS || hS.x <= hZ.x || Math.abs(hZ.y - hS.y) > hZ.h) hZ = hS = null;
+    if (!hZ && !labelLine) return null;
+
+    // Kopfzeilen bis zur Merkmalszeile (MENGE, ZEIT, …: nur Großbuchstaben, darunter die Werte)
+    const yLimit = hZ ? Math.min(hZ.y, hS.y) : Infinity;
+    const top = all.filter(l => l !== labelLine && l.y < yLimit);
+    const maxH = Math.max(0, ...top.slice(0, 4).map(l => l.h));
+    const metaLine = top.find(l => UPPER(l.text) && l.h < maxH * 0.6 && top.some(v => v.y > l.y && v.y - l.y < l.h * 3.2 && !UPPER(v.text)));
+    const yMeta = metaLine ? metaLine.y : yLimit;
+    const head = top.filter(l => l.y < yMeta - 2);
+    const tLines = head.filter(l => l.h >= maxH * 0.8);
+    const title = plain(joinSegs(tLines));
+    const subtitle = plain(joinSegs(head.filter(l => l.h < maxH * 0.8 && l.y > (tLines[0]?.y ?? 0))));
+    if (!title) return null;
+
+    const meta = [];
+    let yAfterMeta = yMeta;
+    if (metaLine) {
+      const vals = [];
+      for (const v of all) {
+        if (v.y <= metaLine.y + 1 || v.y >= yLimit - 2) continue;
+        const prev = vals[vals.length - 1];
+        if (prev ? v.y - prev.y < prev.h * 1.8 : v.y - metaLine.y < metaLine.h * 3.2) vals.push(v); else break;
+      }
+      metaLine.runs.forEach((r, i) => {
+        const nx = metaLine.runs[i + 1]?.x ?? Infinity;
+        const v = plain(joinSegs(lines(vals.flatMap(l => l.items).filter(it => it.x >= r.x - 4 && it.x < nx - 4), false)));
+        meta.push({ k: squash(r.text), label: titleCase(r.text), v: v === '–' ? '' : v });
+      });
+      if (vals.length) yAfterMeta = vals[vals.length - 1].y;
+    }
+    const pick = re => meta.find(m => !m.used && re.test(m.k) && (m.used = true));
+    const servings = pick(/^(MENGE|ERGIBT|PORTIONEN?|STÜCK|FÜR)$/)?.v || '';
+    let cookware = pick(/^(KOCHGESCHIRR|GESCHIRR|FORM|BACKFORM)$/)?.v || '';
     let minutes = null;
-    const hm = min.match(/(\d+(?:[.,]\d+)?)\s*(?:Std|h\b|Stunde)/i), mm = min.match(/(\d+)\s*(?:Min|m\b)/i);
-    if (hm || mm) minutes = Math.round((hm ? parseFloat(hm[1].replace(',', '.')) * 60 : 0) + (mm ? +mm[1] : 0));
-    else if (/\d+/.test(min)) minutes = +min.match(/\d+/)[0];
+    const total = pick(/^(GESAMTZEIT|ZEIT|DAUER)$/);
+    if (total) minutes = toMinutes(total.v);
+    else {
+      const parts = meta.filter(m => !m.used && /ZEIT|DAUER|GARE|RUHE|KOCHEN|MARINIER|VORBEREITUNG|ZUBEREITUNG/.test(m.k));
+      const sum = parts.filter(m => !/optional/i.test(m.v)).map(m => toMinutes(m.v)).filter(Boolean);
+      if (sum.length) minutes = sum.reduce((a, b) => a + b, 0);
+      if (parts.length === 1 && sum.length) parts[0].used = true;
+    }
+    const extra = {};
+    const dietOf = v => (opt.diets || []).find(d => d.toLowerCase() === v.toLowerCase());
+    for (const m of meta) {
+      if (m.used || !m.v) continue;
+      if (/^(ERNÄHRUNG|KÜCHE|ART)$/.test(m.k) && dietOf(m.v)) { extra.diet = dietOf(m.v); m.used = true; }
+      else if (m.k === 'KÜCHE') { extra.cuisine = m.v; m.used = true; }
+      else if (m.k === 'SCHWIERIGKEIT' && (opt.diffs || []).includes(m.v.toLowerCase())) { extra.difficulty = m.v.toLowerCase(); m.used = true; }
+    }
+    const metaNotes = meta.filter(m => !m.used && m.v).map(m => `${m.label}: ${m.v}`);
 
-    if (!title || (!ingredients.length && !outSteps.length)) return null;
-    return { title, subtitle, category, tags, servings: meta[0] && meta[0] !== '–' ? meta[0] : '', minutes, cookware: meta[2] && meta[2] !== '–' ? meta[2] : '', ingredients, steps: outSteps, tip };
+    const { category, tags } = parseLabel(labelLine ? labelText(lines(labelLine.items, false)[0]) : '', CATS, opt.tags || []);
+    const ingredients = [], steps = [], boxes = [];
+
+    if (hZ) {
+      const yBody = Math.min(hZ.y, hS.y), xR = hS.x;
+      const body = all.filter(l => l.y > yBody + 2);
+      // Kasten über die ganze Breite unten (z. B. „Tipps & Tricks“)
+      const cross = body.find(l => l.runs.some(r => r.x < xR - 6 && r.x2 > xR + 6));
+      let yFull = Infinity;
+      if (cross) {
+        const prev = body.filter(l => l.y < cross.y && l.x < xR - 6).pop();
+        yFull = prev && cross.y - prev.y < cross.h * 2.2 && prev.text.length < 40 ? prev.y : cross.y;
+        boxes.push(boxText(lines(items.filter(it => it.y >= yFull - 1), false)));
+      }
+      const inBody = it => it.y > yBody + 2 && it.y < yFull - 1;
+
+      // Linke Spalte: Zutaten (Menge | Zutat), Zwischenüberschriften, danach eingerückte Kästen
+      const left = lines(items.filter(it => inBody(it) && it.x < xR - 6), false);
+      const second = left.filter(l => l.runs.length > 1).map(l => l.runs[1].x).sort((a, b) => a - b);
+      const nameX = second.length ? second[second.length >> 1] : hZ.x + 1e4;
+      const boxAt = left.findIndex(l => l.x > hZ.x + 5 && l.x < nameX - 10);
+      const ingL = boxAt < 0 ? left : left.slice(0, boxAt);
+      if (boxAt >= 0) for (const b of splitBoxes(left.slice(boxAt)).reverse()) {
+        // Kasten „Backform“ o. ä. wird zum Kochgeschirr
+        if (!cookware && b.length > 1 && /^(BACKFORM|FORM|KOCHGESCHIRR|GESCHIRR)$/.test(squash(b[0].text))) cookware = plain(joinSegs(b.slice(1)));
+        else boxes.unshift(boxText(b));
+      }
+      let lastY = -1e9, cur = null;
+      for (const l of ingL) {
+        // Zwischenüberschrift („SUPPENBASIS“, „ZUM ABSCHMECKEN“), darf in die Zutatenspalte ragen
+        if (l.runs.length === 1 && UPPER(l.text) && l.text.length > 2 && !/\d/.test(l.text) && l.x < nameX - 3) { ingredients.push({ a: '', n: l.text }); cur = null; lastY = l.y; continue; }
+        const part = f => plain(lines(l.items.filter(f), false).flatMap(x => x.segs));
+        const a = part(it => it.x < nameX - 3), n = part(it => it.x >= nameX - 3);
+        if (!n && UPPER(a) && a.length > 2 && !/\d/.test(a)) { ingredients.push({ a: '', n: a }); cur = null; lastY = l.y; continue; }
+        if (cur && l.y - lastY < l.h * 1.7) { if (a) cur.a = (cur.a + ' ' + a).trim(); if (n) cur.n = (cur.n + ' ' + n).trim(); }
+        else { cur = { a, n }; ingredients.push(cur); }
+        lastY = l.y;
+      }
+      // Leerzeichen zwischen Zahl und Einheit sicherstellen („220g“ → „220 g“)
+      for (const i of ingredients) i.a = i.a.replace(/(\d)([a-zA-ZäöüÄÖÜ])/g, '$1 $2');
+
+      // Rechte Spalte: nummerierte Schritte, danach evtl. ein Kasten („Tipp“, „Das Besondere“)
+      const right = lines(items.filter(it => inBody(it) && it.x >= xR - 20), false);
+      const isNum = l => l.runs.length > 1 && /^\d{1,2}\.?$/.test(l.runs[0].text);
+      const tx = right.filter(isNum).map(l => l.runs[1].x).sort((a, b) => a - b);
+      const textX = tx.length ? tx[tx.length >> 1] : xR;
+      let st = null, box = null;
+      for (const l of right) {
+        if (isNum(l)) { st = []; steps.push(st); st.push({ segs: l.runs.slice(1).flatMap((r, i) => i ? [{ s: ' ', b: false }, ...r.segs] : r.segs) }); continue; }
+        if (!box && st && l.x < textX - 8) { box = []; }
+        if (box) box.push(l); else if (st) st.push(l); else { st = [l]; steps.push(st); }
+      }
+      if (box) boxes.push(boxText(box));
+    } else {
+      // Freies Layout ohne „Zutaten/Zubereitung“: nummerierte Blöcke werden Schritte, der Rest Hinweise
+      const body = all.filter(l => l.y > yAfterMeta + 2);
+      const bodyH = Math.min(...body.map(l => l.h));
+      const big = body.filter(l => l.h > bodyH * 1.5 && l.runs.length === 1);
+      const nums = body.flatMap(l => l.runs.map((r, i) => ({ r, l, i }))).filter(({ r, l, i }) => /^\d{1,2}\.?$/.test(r.text) && l.runs[i + 1] && l.runs[i + 1].x - r.x2 < r.h * 3);
+      const cols = [...new Set(nums.map(n => Math.round(n.r.x / 40)))].map(k => nums.filter(n => Math.round(n.r.x / 40) === k)[0].r.x).sort((a, b) => a - b);
+      const colOf = x => cols.filter(c => c <= x + 25).length - 1;
+      const used = new Set(nums.flatMap(n => n.r.items));
+      const blocks = nums.sort((a, b) => +a.r.text.replace('.', '') - +b.r.text.replace('.', '')).map(n => {
+        const c = colOf(n.r.x), x0 = cols[c] - 25, x1 = cols[c + 1] != null ? cols[c + 1] - 25 : Infinity;
+        const below = nums.filter(m => colOf(m.r.x) === c && m.r.y > n.r.y + 1).map(m => m.r.y);
+        const yEnd = below.length ? Math.min(...below) - 2 : Infinity;
+        const its = items.filter(it => it.y > n.r.y - n.r.h * 0.6 && it.y < yEnd && it.x >= x0 && it.x < x1 && !n.r.items.includes(it));
+        its.forEach(it => used.add(it));
+        return lines(its, false);
+      });
+      for (const ls of blocks) {
+        if (!ls.length) continue;
+        const [hd, ...rest] = ls;
+        steps.push(rest.length ? [{ segs: [{ s: hd.text, b: false }, { s: ' · ', b: false }] }, ...rest] : [hd]);
+      }
+      const restL = lines(items.filter(it => it.y > yAfterMeta + 2 && !used.has(it) && !big.some(b => b.items.includes(it))), false);
+      for (const b of splitBoxes(restL)) boxes.push(boxText(b));
+      if (!steps.length) return null;
+    }
+
+    const outSteps = steps.map(st => stepFrom(joinSegs(st))).filter(s => s.x);
+    const tip = [...boxes, ...metaNotes].filter(Boolean).join(' · ');
+    const ings = ingredients.filter(i => i.n);
+    if (!ings.length && !outSteps.length) return null;
+    return { title, subtitle, category, tags, servings, minutes, cookware, ingredients: ings, steps: outSteps, tip, ...extra };
   }
 
   // ---------- Merkmale schätzen, die nicht auf der Karte stehen ----------
   const MEAT = /hähnchen|huhn|hühnchen|pute|rind|schwein|bacon|speck|schinken|salami|chorizo|hackfleisch|hack\b|wurst|würstchen|lamm|kalb|ente|gans|wild|reh|hirsch|steak|gulasch|frikadelle|leberkäse|prosciutto|pancetta|hühnerbrühe|rinderbrühe|fleischbrühe/i;
   const FISH = /lachs|thunfisch|forelle|kabeljau|dorsch|seelachs|zander|garnele|shrimp|scampi|krabbe|muschel|tintenfisch|sardelle|sardine|hering|makrele|fisch/i;
-  const ANIMAL = /(?<!kokos|hafer|soja|mandel|reis|dinkel|cashew)milch|sahne|butter|käse|parmesan|mozzarella|quark|joghurt|ei\b|eier|eigelb|eiweiß|honig|schmand|crème|creme|mascarpone|ricotta|feta|gelatine/i;
+  const ANIMAL = /(?<!kokos|hafer|soja|mandel|reis|dinkel|cashew)milch|sahne|butter|käse|parmesan|mozzarella|quark|joghurt|ei\b|eier|eigelb|eiweiß|honig|schmand|crème|creme|mascarpone|ricotta|feta|gelatine|pecorino|latte\b|burrata|ghee|cheese/i;
   const MAIN = [['Pasta', /pasta|nudel|spaghetti|penne|rigatoni|tagliatelle|fusilli|farfalle|lasagne|gnocchi|maultasche|spätzle/i], ['Reis', /reis|risotto/i], ['Kartoffeln', /kartoffel/i], ['Kürbis', /kürbis/i], ['Hülsenfrüchte', /linse|kichererbse|bohne/i], ['Hähnchen', /hähnchen|huhn|hühnchen|pute/i], ['Rind', /rind|hackfleisch|steak/i], ['Schwein', /schwein|bacon|speck|schinken|wurst/i], ['Fisch', FISH], ['Eier', /\beier?\b/i], ['Käse', /käse/i]];
   function guess(r) {
     const ing = (r.ingredients || []).map(i => i.n).join(' · ');

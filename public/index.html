@@ -478,7 +478,7 @@ const PROMPT_HEAD=`Erkenne alle Rezepte im folgenden Material und antworte nur m
 `;
 const S=(v,n=300)=>String(v??'').slice(0,n);
 function normRecipe(o){return{title:S(o.title,120)||'Ohne Titel',subtitle:S(o.subtitle),category:S(o.category,40),cuisine:S(o.cuisine,40),diet:DIETS.includes(o.diet)?o.diet:'',mainIngredient:S(o.mainIngredient,40),minutes:+o.minutes>0?Math.round(+o.minutes):null,difficulty:DIFFS.includes(o.difficulty)?o.difficulty:'',season:Array.isArray(o.season)?o.season.filter(s=>SEASONS.includes(s)):[],servings:S(o.servings,60),cookware:S(o.cookware,60),tags:Array.isArray(o.tags)?o.tags.map(t=>S(t,30)).filter(Boolean).slice(0,6):[],
-  ingredients:Array.isArray(o.ingredients)?o.ingredients.slice(0,60).map(i=>({a:S(i?.a,40),n:S(i?.n,120)})).filter(i=>i.n):[],steps:Array.isArray(o.steps)?o.steps.slice(0,30).map(s=>({t:S(s?.t,50),x:S(s?.x,1500)})).filter(s=>s.x):[],tip:S(o.tip,500),color:COLORS[o.color]?o.color:'lachs',icon:ICONS[o.icon]?o.icon:'topf'}}
+  ingredients:Array.isArray(o.ingredients)?o.ingredients.slice(0,60).map(i=>({a:S(i?.a,40),n:S(i?.n,120)})).filter(i=>i.n):[],steps:Array.isArray(o.steps)?o.steps.slice(0,30).map(s=>({t:S(s?.t,50),x:S(s?.x,1500)})).filter(s=>s.x):[],tip:S(o.tip,1500),color:COLORS[o.color]?o.color:'lachs',icon:ICONS[o.icon]?o.icon:'topf'}}
 async function askRecipes(material,images){
   const opts={modelTier:'default'};if(images?.length)opts.images=images;
   const o=await sample.json(PROMPT_HEAD+(images?.length?'\nDie Rezepte stehen auf den beigefügten Seitenbildern.':'')+(material?'\nMaterial:\n'+material.slice(0,15000):''),opts);
@@ -541,8 +541,8 @@ async function readPdf(file,log){
   const n=Math.min(doc.numPages,200);const found=[],rest=[];
   for(let i=1;i<=n;i++){
     const p=await doc.getPage(i);const pi=await window.NNZCard.pageItems(p);
-    const r=window.NNZCard.parseCard(pi,{cats:CATS,tags:[...new Set(recipes.flatMap(x=>x.tags||[]))]});
-    if(r){const g=window.NNZCard.guess(r);found.push(normRecipe({...g,...r,color:await headColor(p)||'lachs'}));continue}
+    const r=window.NNZCard.parseCard(pi,{cats:CATS,diets:DIETS,diffs:DIFFS,tags:[...new Set(recipes.flatMap(x=>x.tags||[]))]});
+    if(r){const g=window.NNZCard.guess(r);if(r.diet)delete g.diet;found.push(normRecipe({...g,...r,color:await headColor(p)||'lachs'}));continue}
     rest.push({p,n:i,text:pi.items.length?(await p.getTextContent()).items.map(it=>it.str+(it.hasEOL?'\n':'')).join('').trim():''});
   }
   if(found.length)log(`${file.name}: ${found.length} Rezeptkarte${found.length>1?'n':''} erkannt`);
