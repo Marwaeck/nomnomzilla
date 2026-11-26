@@ -4,7 +4,7 @@
 
 **Website:** [marwaeck.github.io/nomnomzilla](https://marwaeck.github.io/nomnomzilla/)
 
-Das Familien-Rezeptbuch für den eigenen Server. Läuft als Docker-Container, zum Beispiel auf Unraid, und ist im Heimnetz von jedem Gerät per Browser erreichbar.
+Das Familien-Rezeptbuch für den eigenen Server. Läuft als Docker-Container, zum Beispiel auf Unraid oder mit Docker Desktop unter Windows und macOS, und ist im Heimnetz von jedem Gerät per Browser erreichbar.
 
 - **Rezepte suchen und gruppieren** nach Kategorie, Küche, Ernährung, Zeit, Schwierigkeit, Saison, Hauptzutat oder Stichwort
 - **Rezeptkarten exportieren** als DIN-A4-PDF, PNG oder HTML, auch mehrere Karten in einem PDF
@@ -41,6 +41,43 @@ Docker → Container hinzufügen, und von Hand eintragen:
 ### Updates
 
 Jeder Push auf `main` baut über GitHub Actions automatisch ein neues Image. In Unraid erscheint dann bei NomNomZilla „Update verfügbar“, ein Klick genügt. Die Rezepte in `/data` bleiben dabei erhalten.
+
+## Installation mit Docker Desktop (Windows, Mac) oder Docker unter Linux
+
+Das Image läuft auf Intel/AMD und auf ARM, also auch auf Macs mit Apple-Chip und auf einem Raspberry Pi.
+
+### Variante A: Mit `docker-compose.yml` (empfohlen)
+
+1. [Docker Desktop](https://www.docker.com/products/docker-desktop/) installieren und starten.
+2. Einen Ordner anlegen, z. B. `NomNomZilla`, und die Datei [`docker-compose.yml`](docker-compose.yml) hineinlegen.
+3. In diesem Ordner ein Terminal öffnen (Windows: PowerShell) und starten:
+   ```sh
+   docker compose up -d
+   ```
+4. Im Browser [http://localhost:6767](http://localhost:6767) öffnen. Andere Geräte im Heimnetz erreichen die App unter `http://<ip-des-rechners>:6767`.
+
+Passwort, Claude-Import oder einen anderen Port stellst du über eine Datei `.env` im selben Ordner ein. Vorlage: [`.env.example`](.env.example). Danach `docker compose up -d` noch einmal ausführen.
+
+**Update:** `docker compose pull` und dann `docker compose up -d`.
+
+### Variante B: Ein einziger Befehl
+
+```sh
+docker run -d --name nomnomzilla --restart unless-stopped -p 6767:8080 -v nomnomzilla-data:/data ghcr.io/marwaeck/nomnomzilla:latest
+```
+
+Mit Claude-Import zusätzlich `-e ANTHROPIC_API_KEY=sk-ant-...` vor den Image-Namen setzen.
+
+### Variante C: Nur über die Oberfläche von Docker Desktop
+
+1. Oben in der Suche `ghcr.io/marwaeck/nomnomzilla` eingeben, **Pull** klicken.
+2. Unter **Images** beim Image auf **Run** (▶) klicken und **Optional settings** aufklappen.
+3. Host port `6767`, bei Volumes als Host path einen Ordner wählen (z. B. `Dokumente\NomNomZilla`) und Container path `/data`.
+4. Optional bei Environment variables `ANTHROPIC_API_KEY` oder `APP_PASSWORD` eintragen, dann **Run**.
+
+### Wo liegen die Daten?
+
+Mit Variante A und B im Docker-Volume `nomnomzilla-data`. Es bleibt bei Updates und beim Löschen des Containers erhalten. Zum Sichern genügt der Button **Sicherung herunterladen** in der App. Wer die Datei lieber direkt im eigenen Ordner haben will, ersetzt in der `docker-compose.yml` die Zeile `nomnomzilla-data:/data` durch `./data:/data`.
 
 ## Einstellungen
 
