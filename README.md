@@ -8,7 +8,8 @@ Das Familien-Rezeptbuch für den eigenen Server. Läuft als Docker-Container, zu
 - **Rezeptkarten exportieren** als DIN-A4-PDF, PNG oder HTML, auch mehrere Karten in einem PDF
 - **„Was essen wir heute?“**: vier kurze Fragen, dann ein Vorschlag aus euren Rezepten, bevorzugt was länger nicht gekocht wurde
 - **Live-Abgleich**: Was auf einem Gerät gespeichert wird, erscheint sofort auf allen anderen
-- **Import aus Text und PDF** mit Claude (optional, siehe unten)
+- **Eigene Rezeptkarten-PDFs hochladen**, auch mehrere auf einmal, ganz ohne Internet
+- **Import aus fremden PDFs und Text** mit Claude (optional, siehe unten)
 
 Kartenexport, Suche, Assistent und Bearbeiten laufen komplett im Container und im Browser. Es werden keine externen Dienste, CDNs oder Schriften aus dem Internet geladen.
 
@@ -44,16 +45,25 @@ Jeder Push auf `main` baut über GitHub Actions automatisch ein neues Image. In 
 | Variable | Pflicht | Bedeutung |
 |---|---|---|
 | `APP_PASSWORD` | nein | Wenn gesetzt, fragt der Browser einmal nach Benutzername (beliebig) und Passwort. |
-| `ANTHROPIC_API_KEY` | nein | Schaltet „Importieren“ frei (Text und PDF). Ohne Schlüssel ist der Button ausgeblendet, alles andere funktioniert. |
+| `ANTHROPIC_API_KEY` | nein | Schaltet den Claude-Import für fremde PDFs und Text frei. Eigene Rezeptkarten lassen sich auch ohne Schlüssel hochladen. |
 | `ANTHROPIC_MODEL` | nein | Modell für den Import, Standard `claude-sonnet-5-5`. |
 | `PUID` / `PGID` | nein | Besitzer der Dateien in `/data`, Standard `99`/`100` (Unraid nobody:users). |
 | `PORT` | nein | Interner Port, Standard `8080`. |
+
+### Eigene Rezeptkarten hochladen
+
+Über **Importieren** lassen sich PDFs im NomNomZilla-Kartenlayout hochladen, auch mehrere Dateien und mehrseitige PDFs auf einmal. Das läuft komplett im Browser, ohne API-Schlüssel und ohne Internet.
+
+- **PDFs aus dem Export** der App enthalten die Rezeptdaten unsichtbar in den Metadaten und kommen exakt so zurück, wie sie gespeichert waren.
+- **PDFs nach demselben Muster**, zum Beispiel eine als PDF gedruckte HTML-Karte, werden anhand des Layouts gelesen: Titel, Untertitel, Kategorie und Stichwort aus der Kopfzeile, Menge, Zeit, Kochgeschirr, Zutaten, Tipp, Schritte (mit **fett**) und die Farbe der Kopfzeile. Ernährung, Hauptzutat und Illustration werden geschätzt. Küche, Schwierigkeit und Saison stehen nicht auf der Karte und bleiben leer.
+- **Ein einzelnes Rezept** öffnet sich zum Prüfen im Editor. Mehrere werden direkt gespeichert; Rezepte mit einem Titel, den es schon gibt, werden übersprungen.
+- PDFs aus Versionen vor diesem Update enthalten die Karte nur als Bild. Die lassen sich nur mit dem Claude-Import lesen.
 
 ### Import mit Claude scharfschalten
 
 1. Unter [console.anthropic.com](https://console.anthropic.com) einen API-Schlüssel anlegen und etwas Guthaben aufladen.
 2. Den Schlüssel im Unraid-Template bei „Anthropic API-Schlüssel“ eintragen und den Container neu starten.
-3. Jetzt erscheint der Button **Importieren**. PDFs mit Text kosten pro Rezept etwa einen Cent, gescannte Seiten etwas mehr, weil jede Seite als Bild gelesen wird.
+3. Unter **Importieren** kannst du jetzt auch fremde PDFs und Text einlesen. PDFs mit Text kosten pro Rezept etwa einen Cent, gescannte Seiten etwas mehr, weil jede Seite als Bild gelesen wird.
 
 Der Schlüssel bleibt auf dem Server, der Browser bekommt ihn nie zu sehen.
 
