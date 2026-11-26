@@ -1,0 +1,144 @@
+---
+---
+@font-face{font-family:Inter;font-weight:400;font-display:swap;src:url("../fonts/inter-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:Inter;font-weight:600;font-display:swap;src:url("../fonts/inter-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:Inter;font-weight:700;font-display:swap;src:url("../fonts/inter-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:700;font-display:swap;src:url("../fonts/bricolage-grotesque-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:800;font-display:swap;src:url("../fonts/bricolage-grotesque-latin-800-normal.woff2") format("woff2")}
+
+:root{
+  --bg:#FFFDF8;--ink:#2A2320;--mute:#6b5f55;--line:#E7DED3;--panel:#fff;
+  --band:#F2A68F;--green:#8DBF73;--cookie:#F5B567;--code:#F6EFE6;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#1c1816;--ink:#f3ebe3;--mute:#b5a89c;--line:#3a322d;--panel:#26201d;--band:#7d4434;--code:#2f2824;color-scheme:dark}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Bricolage Grotesque",Inter,sans-serif;font-weight:800;line-height:1.08;margin:0}
+a{color:inherit;text-decoration-thickness:2px;text-underline-offset:3px}
+code{font:500 .9em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:.1em .35em;border-radius:6px}
+img{max-width:100%;height:auto;display:block}
+.wrap{width:min(1120px,100% - 32px);margin-inline:auto}
+section{padding:72px 0 0}
+section>h2{font-size:clamp(30px,4.5vw,46px)}
+.sub{color:var(--mute);margin:10px 0 28px;max-width:62ch}
+
+/* Kopf */
+.hero{background:var(--band);color:#2A2320;position:relative;padding-bottom:70px}
+@media (prefers-color-scheme:dark){.hero{color:#f3ebe3}}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:800 22px "Bricolage Grotesque",sans-serif;text-decoration:none}
+.brand img{border-radius:9px;border:2px solid currentColor}
+.nav-links{display:flex;gap:20px;flex-wrap:wrap;font-weight:600;font-size:15px}
+.nav-links a{text-decoration:none}
+.nav-links a:hover{text-decoration:underline}
+.hero-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:40px;align-items:center;padding-top:28px}
+.kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin:0 0 14px}
+.hero h1{font-size:clamp(38px,5.2vw,62px);letter-spacing:-.02em}
+.lead{font-size:clamp(17px,1.6vw,19px);max-width:52ch;margin:22px 0 28px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:14px;border:2px solid #2A2320;background:#2A2320;color:#FFFDF8;font-weight:700;text-decoration:none;box-shadow:4px 4px 0 #2A2320;transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #2A2320}
+.btn.ghost{background:#FFFDF8;color:#2A2320}
+@media (prefers-color-scheme:dark){.btn{border-color:#f3ebe3;box-shadow:4px 4px 0 #120f0e}.btn.ghost{background:transparent;color:#f3ebe3}}
+.fine{font-size:14px;opacity:.8;margin:18px 0 0}
+.zilla{position:relative;justify-self:center;width:min(340px,80%)}
+.zilla img{width:100%;border-radius:22%;border:3px solid #2A2320;box-shadow:10px 10px 0 #2A2320;animation:bob 3.2s ease-in-out infinite;transform-origin:50% 90%}
+.bubble{position:absolute;top:-10px;right:-14px;background:#FFFDF8;color:#2A2320;border:2.5px solid #2A2320;border-radius:18px 18px 18px 4px;padding:8px 14px;font:800 18px "Bricolage Grotesque",sans-serif;transform:rotate(6deg);animation:pop 3.2s ease-in-out infinite}
+.crumb{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--cookie);border:2px solid #2A2320;animation:fall 2.4s ease-in infinite}
+.c1{left:66%;bottom:20%}.c2{left:58%;bottom:14%;animation-delay:.8s;width:9px;height:9px}.c3{left:74%;bottom:10%;animation-delay:1.5s}
+@keyframes bob{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg) translateY(-6px)}}
+@keyframes pop{0%,100%{transform:rotate(6deg) scale(1)}50%{transform:rotate(2deg) scale(1.08)}}
+@keyframes fall{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(70px) rotate(90deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.zilla img,.bubble,.crumb{animation:none}.crumb{display:none}}
+.wave{position:absolute;left:0;bottom:-1px;width:100%;height:40px;fill:var(--bg)}
+
+.shot-hero{padding-top:8px}
+.shot-hero img{border-radius:16px;border:2.5px solid var(--ink);box-shadow:8px 8px 0 var(--ink)}
+
+/* Funktionen */
+.features{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.f{background:var(--panel);border:2px solid var(--ink);border-radius:16px;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.f:hover{transform:translate(-3px,-3px) rotate(-.5deg);box-shadow:6px 6px 0 var(--ink)}
+.f .ico{display:flex;align-items:center;height:76px;padding:0 20px;background:var(--c);font-size:34px;border-bottom:2px solid var(--ink)}
+.f h3{font-size:22px;padding:18px 20px 6px}
+.f p{margin:0;padding:0 20px 20px;color:var(--mute);font-size:16px}
+
+/* Galerie */
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:36px 28px;margin-top:28px;align-items:start}
+.shots figure,.claude figure{margin:0}
+.shots img,.claude figure img{border-radius:12px;border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:#fff}
+figcaption{font-weight:600;margin-top:12px;font-size:15px}
+.tilt-l{transform:rotate(-1.2deg)}.tilt-r{transform:rotate(1.2deg)}
+.tilt-l,.tilt-r{transition:transform .2s}
+.tilt-l:hover,.tilt-r:hover{transform:rotate(0) scale(1.01)}
+.shots .wide{grid-column:span 2}
+.shots figure:not(.wide){max-width:320px;justify-self:center}
+
+/* Installation */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:-2px;position:relative}
+.tabs button{font:700 16px Inter,sans-serif;color:var(--ink);background:var(--code);border:2px solid var(--ink);border-radius:14px 14px 0 0;padding:12px 20px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--panel);border-bottom-color:var(--panel)}
+html:not(.js) .tabs{display:none}
+.panel{background:var(--panel);border:2px solid var(--ink);border-radius:0 16px 16px 16px;padding:28px clamp(18px,3vw,36px);box-shadow:6px 6px 0 var(--ink)}
+html:not(.js) .panel{border-radius:16px;margin-bottom:24px}
+.panel h3{font-size:26px;margin-bottom:12px}
+.js .panel h3{display:none}
+.steps{padding:0;margin:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding-left:48px;margin:0 0 18px;min-height:32px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+pre{position:relative;background:#2A2320;color:#FFFDF8;border-radius:12px;padding:16px 18px;margin:12px 0 0;overflow-x:auto;font-size:14px;line-height:1.6}
+@media (prefers-color-scheme:dark){pre{background:#120f0e}}
+pre code{background:none;padding:0;color:inherit;white-space:pre}
+.codebox{position:relative}.js pre{padding-right:96px}
+.copy{position:absolute;top:8px;right:8px;font:600 12px Inter,sans-serif;background:#FFFDF8;color:#2A2320;border:0;border-radius:8px;padding:6px 10px;cursor:pointer}
+.note{background:var(--code);border-radius:12px;padding:14px 18px;margin:20px 0 0;font-size:15px;color:var(--mute)}
+
+/* Tabelle */
+.table{overflow-x:auto;border:2px solid var(--ink);border-radius:16px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:16px}
+th,td{text-align:left;padding:14px 18px;border-bottom:1.5px solid var(--line);vertical-align:top}
+th{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap}
+
+/* Claude */
+.claude-card{display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:center;background:#BCCFAE;color:#2A2320;border:2px solid #2A2320;border-radius:24px;padding:clamp(22px,4vw,48px);box-shadow:8px 8px 0 #2A2320}
+@media (prefers-color-scheme:dark){.claude-card{background:#34452c;color:#f3ebe3;border-color:#f3ebe3;box-shadow:8px 8px 0 #000}.claude-card .steps li::before{background:#f3ebe3;color:#1c1816}}
+.claude-card h2{font-size:clamp(28px,3.8vw,40px);margin-bottom:14px}
+.claude-card .steps{margin-top:22px}
+.claude-card .steps li::before{background:#2A2320;color:#FFFDF8}
+.claude-card code{background:rgba(255,255,255,.45)}
+@media (prefers-color-scheme:dark){.claude-card code{background:rgba(0,0,0,.3)}}
+.claude figure{max-width:320px;justify-self:center}
+
+/* FAQ */
+.faq details{border:2px solid var(--ink);border-radius:14px;background:var(--panel);margin:0 0 14px}
+.faq summary{cursor:pointer;padding:16px 20px;font:700 19px "Bricolage Grotesque",sans-serif;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:24px;line-height:1;transition:transform .2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{margin:0;padding:0 20px 18px;color:var(--mute)}
+.faq h2{margin-bottom:24px}
+
+.foot{margin-top:96px;background:var(--band);color:#2A2320;padding:36px 0}
+@media (prefers-color-scheme:dark){.foot{color:#f3ebe3}}
+.foot-in{display:flex;gap:18px;align-items:center}
+.foot img{border-radius:14px;border:2px solid currentColor;flex:none}
+.foot p{margin:0;font-size:15px}
+
+@media (max-width:820px){
+  .hero-grid,.claude-card{grid-template-columns:1fr}
+  .zilla{width:min(170px,50%);grid-row:1;justify-self:start;margin-left:6px}
+  .bubble{font-size:15px;right:-40px}
+  .tabs button{font-size:14px;padding:10px 12px}
+  .steps li{padding-left:42px}
+  .steps pre{margin-left:-42px}
+  .shots{grid-template-columns:1fr}
+  .shots .wide{grid-column:auto}
+  .nav-links{gap:14px}
+  section{padding-top:56px}
+}
