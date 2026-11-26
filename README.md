@@ -1,5 +1,7 @@
 # NomNomZilla
 
+![NomNomZilla](docs/social-preview.png)
+
 Das Familien-Rezeptbuch für den eigenen Server. Läuft als Docker-Container, zum Beispiel auf Unraid, und ist im Heimnetz von jedem Gerät per Browser erreichbar.
 
 - **Rezepte suchen und gruppieren** nach Kategorie, Küche, Ernährung, Zeit, Schwierigkeit, Saison, Hauptzutat oder Stichwort
