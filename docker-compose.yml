@@ -1,0 +1,26 @@
+# NomNomZilla mit Docker Desktop (Windows, Mac) oder Docker unter Linux starten:
+#
+#   docker compose up -d
+#
+# Danach im Browser http://localhost:6767 öffnen.
+# Optionale Einstellungen (Passwort, Claude-Import) kommen in eine Datei .env
+# neben dieser Datei, siehe .env.example.
+
+services:
+  nomnomzilla:
+    image: ghcr.io/marwaeck/nomnomzilla:latest
+    container_name: nomnomzilla
+    restart: unless-stopped
+    ports:
+      # Host-Port links ändern, falls 6767 belegt ist (6665–6669 sperren Browser).
+      - "${NOMNOMZILLA_PORT:-6767}:8080"
+    volumes:
+      # Docker-Volume: funktioniert auf Windows, Mac und Linux ohne Rechte-Ärger.
+      - nomnomzilla-data:/data
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5-5}
+
+volumes:
+  nomnomzilla-data:
