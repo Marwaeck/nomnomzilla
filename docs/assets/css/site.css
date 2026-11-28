@@ -8,7 +8,7 @@
 
 :root{
   --bg:#FFFDF8;--ink:#2A2320;--mute:#6b5f55;--line:#E7DED3;--panel:#fff;
-  --band:#F2A68F;--green:#8DBF73;--cookie:#F5B567;--code:#F6EFE6;
+  --band:#F2A68F;--green:#8DBF73;--sauce:#D9503A;--code:#F6EFE6;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
@@ -48,7 +48,7 @@ section>h2{font-size:clamp(30px,4.5vw,46px)}
 .zilla{position:relative;justify-self:center;width:min(340px,80%)}
 .zilla img{width:100%;border-radius:22%;border:3px solid #2A2320;box-shadow:10px 10px 0 #2A2320;animation:bob 3.2s ease-in-out infinite;transform-origin:50% 90%}
 .bubble{position:absolute;top:-10px;right:-14px;background:#FFFDF8;color:#2A2320;border:2.5px solid #2A2320;border-radius:18px 18px 18px 4px;padding:8px 14px;font:800 18px "Bricolage Grotesque",sans-serif;transform:rotate(6deg);animation:pop 3.2s ease-in-out infinite}
-.crumb{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--cookie);border:2px solid #2A2320;animation:fall 2.4s ease-in infinite}
+.crumb{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--sauce);border:2px solid #2A2320;animation:fall 2.4s ease-in infinite}
 .c1{left:66%;bottom:20%}.c2{left:58%;bottom:14%;animation-delay:.8s;width:9px;height:9px}.c3{left:74%;bottom:10%;animation-delay:1.5s}
 @keyframes bob{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg) translateY(-6px)}}
 @keyframes pop{0%,100%{transform:rotate(6deg) scale(1)}50%{transform:rotate(2deg) scale(1.08)}}
